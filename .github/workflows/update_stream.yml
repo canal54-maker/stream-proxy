@@ -1,0 +1,40 @@
+name: Actualizar Enlace YouTube
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Se ejecuta automáticamente cada 1 hora
+  workflow_dispatch: # Permite darle a un botón manual en GitHub para probarlo al instante
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar yt-dlp
+        run: |
+          pip install --upgrade yt-dlp
+
+      - name: Extraer enlace de YouTube
+        run: |
+          # Extrae la URL directa del vídeo de YouTube
+          URL="https://www.youtube.com/watch?v=9qnXSEGaAcE"
+          DIRECT_URL=$(yt-dlp -g "$URL" | tail -n 1)
+          
+          # Guarda la URL en un archivo llamado stream.txt
+          echo "$DIRECT_URL" > stream.txt
+
+      - name: Subir cambios al repositorio
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stream.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Actualizar enlace de YouTube automático" && git push)
